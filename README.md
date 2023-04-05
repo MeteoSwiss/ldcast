@@ -1,6 +1,8 @@
-LDCast is a precipitation nowcasting model based on a latent diffusion model (LDM), used by e.g. Stable Diffusion).
+LDCast is a precipitation nowcasting model based on a latent diffusion model (LDM, used by e.g. Stable Diffusion).
 
 This repository contains the code for using LDCast to make predictions and the code used to generate the analysis in the LDCast paper (a preprint will be available soon).
+
+A GPU is recommended for both using and training LDCast, although you may be able to generate some samples with a CPU and enough patience.
 
 # Installation
 
@@ -36,7 +38,7 @@ Here, `ldm_weights_fn` is the path to the LDM weights and `autoenc_weights_fn` i
 
 ## Demo
 
-For a practical example, you can run the demo in the `scripts` directory. First download the `ldcast-demo-20210622.zip` file from the Zenodo repository, then unzip it in the `data` directory. Then run
+For a practical example, you can run the demo in the `scripts` directory. First download the `ldcast-demo-20210622.zip` file from the [Zenodo repository](https://doi.org/10.5281/zenodo.7780914), then unzip it in the `data` directory. Then run
 ```bash
 $ python forecast_demo.py
 ```
@@ -46,7 +48,7 @@ See the function `forecast_demo` in `forecast_demo.py` see how the `Forecast` cl
 
 ## Training data
 
-The preprocessed training data, needed to rerun the LDCast training, can be found at Zenodo repository https://doi.org/10.5281/zenodo.7780914. Unzip the `ldcast-datasets.zip` file to the `data` directory.
+The preprocessed training data, needed to rerun the LDCast training, can be found at the [Zenodo repository](https://doi.org/10.5281/zenodo.7780914). Unzip the `ldcast-datasets.zip` file to the `data` directory.
 
 ## Training the autoencoder
 
