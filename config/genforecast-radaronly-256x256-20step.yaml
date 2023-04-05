@@ -1,0 +1,5 @@
+sample_shape: [8,8]
+batch_size: 24
+sampler: "sampler_nowcaster256"
+initial_weights: "../models/genforecast/genforecast-radaronly-128x128-20step.pt"
+lr: 2.5e-5
