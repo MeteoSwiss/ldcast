@@ -42,7 +42,7 @@ For a practical example, you can run the demo in the `scripts` directory. First 
 ```bash
 $ python forecast_demo.py
 ```
-See the function `forecast_demo` in `forecast_demo.py` see how the `Forecast` class works.
+A sample output can be found in the file `ldcast-demo-video-20210622.zip` in the data repository. See the function `forecast_demo` in `forecast_demo.py` see how the `Forecast` class works.
 
 # Training 
 
