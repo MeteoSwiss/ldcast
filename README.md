@@ -34,7 +34,7 @@ from ldcast import forecast
 fc = forecast.Forecast(ldm_weights_fn, autoenc_weights_fn)
 R_pred = fc(R_past)
 ```
-Here, `ldm_weights_fn` is the path to the LDM weights and `autoenc_weights_fn` is the path to the autoencoder weights. `R_pred` is a NumPy array of precipitation rates with shape `(timesteps, height, width)` where `timesteps` must be 4 and `height` and `width` must be divisible by 32.
+Here, `ldm_weights_fn` is the path to the LDM weights and `autoenc_weights_fn` is the path to the autoencoder weights. `R_past` is a NumPy array of precipitation rates with shape `(timesteps, height, width)` where `timesteps` must be 4 and `height` and `width` must be divisible by 32.
 
 ## Demo
 
