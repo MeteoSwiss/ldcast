@@ -27,9 +27,9 @@ setuptools.setup(
         "numpy",
         "omegaconf",        
         "pyshp",
-        "pytorch",
         "pytorch-lightning",
         "scipy",
+        "torch",
         "tqdm"
     ],
     extras_require={
