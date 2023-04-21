@@ -21,7 +21,7 @@ setuptools.setup(
         "fire",
         "einops",
         "h5py",
-        "matplotlib"
+        "matplotlib",
         "netCDF4",
         "numba",
         "numpy",
