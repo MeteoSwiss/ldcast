@@ -10,13 +10,9 @@ Clone the repository, then, in the main directory, run
 ```bash
 $ pip install -e .
 ```
-(if you plan to modify the code) or
+This should automatically install the required packages. If you don't want that, use:
 ```bash
-$ pip install .
-```
-if you just want to run it. This should automatically install the required packages. If you don't want that, use:
-```bash
-$ pip install --no-dependencies .
+$ pip install --no-dependencies -e .
 ```
 
 # Using LDCast
