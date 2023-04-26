@@ -6,11 +6,15 @@ A GPU is recommended for both using and training LDCast, although you may be abl
 
 # Installation
 
+It is recommended you install the code in its own virtual environment (created with e.g. pyenv or conda).
+
 Clone the repository, then, in the main directory, run
 ```bash
 $ pip install -e .
 ```
-This should automatically install the required packages. If you don't want that, use:
+This should automatically install the required packages (which might take some minutes). In the paper, we used PyTorch 11.2 but are not aware of any problems with newer versions.
+
+If you don't want the requirements to be installed (e.g. if you installed them manually with conda), use:
 ```bash
 $ pip install --no-dependencies -e .
 ```
@@ -39,6 +43,8 @@ For a practical example, you can run the demo in the `scripts` directory. First 
 $ python forecast_demo.py
 ```
 A sample output can be found in the file `ldcast-demo-video-20210622.zip` in the data repository. See the function `forecast_demo` in `forecast_demo.py` see how the `Forecast` class works.
+
+The demo runs in a couple of minutes on our system using one V100 GPU; with a CPU around 10 minutes or more would be expected. A progress bar will show the status of the generation.
 
 # Training 
 
