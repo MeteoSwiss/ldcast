@@ -1,6 +1,6 @@
 LDCast is a precipitation nowcasting model based on a latent diffusion model (LDM, used by e.g. [Stable Diffusion](https://github.com/CompVis/stable-diffusion)).
 
-This repository contains the code for using LDCast to make predictions and the code used to generate the analysis in the LDCast paper (a preprint will be available soon).
+This repository contains the code for using LDCast to make predictions and the code used to generate the analysis in the LDCast paper (a preprint is available at https://arxiv.org/abs/2304.12891).
 
 A GPU is recommended for both using and training LDCast, although you may be able to generate some samples with a CPU and enough patience.
 
