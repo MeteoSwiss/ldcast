@@ -63,7 +63,7 @@ A sample output can be found in the file `ldcast-demo-video-20210622.zip` in the
 $ python forecast_demo.py --ensemble-members=8
 ```
 
-The demo runs in a couple of minutes on our system using one V100 GPU; with a CPU around 10 minutes or more would be expected. A progress bar will show the status of the generation.
+The demo for a single ensemble member runs in a couple of minutes on our system using one V100 GPU; with a CPU around 10 minutes or more would be expected. A progress bar will show the status of the generation.
 
 # Training 
 
