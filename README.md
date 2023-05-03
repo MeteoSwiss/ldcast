@@ -31,10 +31,26 @@ The easiest way to produce predictions is to use the `ldcast.forecast.Forecast` 
 ```python
 from ldcast import forecast
 
-fc = forecast.Forecast(ldm_weights_fn, autoenc_weights_fn)
+fc = forecast.Forecast(
+    ldm_weights_fn=ldm_weights_fn, autoenc_weights_fn=autoenc_weights_fn
+)
 R_pred = fc(R_past)
 ```
 Here, `ldm_weights_fn` is the path to the LDM weights and `autoenc_weights_fn` is the path to the autoencoder weights. `R_past` is a NumPy array of precipitation rates with shape `(timesteps, height, width)` where `timesteps` must be 4 and `height` and `width` must be divisible by 32.
+
+### Ensemble predictions
+
+If want to process multiple cases at once and/or generate several ensemble members, there is the `ldcast.forecast.ForecastDistributed` class. The usage is similar to the `Forecast` class, for example:
+```python
+from ldcast import forecast
+
+fc = forecast.ForecastDistributed(
+    ldm_weights_fn=ldm_weights_fn, autoenc_weights_fn=autoenc_weights_fn,
+    ensemble_members=32
+)
+R_pred = fc(R_past)
+```
+Here, `R_past` should be of shape `(cases, timesteps, height, width)` where `cases` is the number of cases you want to process. For each case, `ensemble_members` predictions are produced (this is the last axis of `R_pred`). `ForecastDistributed` automatically distributes the workload to multiple GPUs if you have them.
 
 ## Demo
 
@@ -42,7 +58,10 @@ For a practical example, you can run the demo in the `scripts` directory. First 
 ```bash
 $ python forecast_demo.py
 ```
-A sample output can be found in the file `ldcast-demo-video-20210622.zip` in the data repository. See the function `forecast_demo` in `forecast_demo.py` see how the `Forecast` class works.
+A sample output can be found in the file `ldcast-demo-video-20210622.zip` in the data repository. See the function `forecast_demo` in `forecast_demo.py` see how the `Forecast` class works. To run an ensemble mean of 8 members using the `ForecastDistributed` class, you can use:
+```bash
+$ python forecast_demo.py --ensemble-members=8
+```
 
 The demo runs in a couple of minutes on our system using one V100 GPU; with a CPU around 10 minutes or more would be expected. A progress bar will show the status of the generation.
 
@@ -80,4 +99,3 @@ You can find scripts for evaluating models in the `scripts` directory:
 * `eval_pysteps.py` to evaluate PySTEPS (requires pysteps installation)
 * `metrics.py` to produce metrics from the evaluation results produced with the functions in scripts above
 * `plot_genforecast.py` to make plots from the results generated
-

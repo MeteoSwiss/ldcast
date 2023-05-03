@@ -78,13 +78,32 @@ def forecast_demo(
     past_timesteps=4,
     crop_box=((128,480), (160,608)),
     draw_border=True,
+    ensemble_members=1,
 ):
     R_past = read_data(
         data_dir=data_dir, t0=t0, interval=interval,
         past_timesteps=past_timesteps, crop_box=crop_box
     )
-    fc = forecast.Forecast(ldm_weights_fn, autoenc_weights_fn)
-    R_pred = fc(R_past, num_diffusion_iters=num_diffusion_iters)
+    if ensemble_members == 1:
+        fc = forecast.Forecast(
+            ldm_weights_fn=ldm_weights_fn,
+            autoenc_weights_fn=autoenc_weights_fn
+        )
+    elif ensemble_members > 1:
+        fc = forecast.ForecastDistributed(
+            ldm_weights_fn=ldm_weights_fn,
+            autoenc_weights_fn=autoenc_weights_fn,
+        )
+        R_past = R_past.reshape((1,) + R_past.shape)
+        R_pred = fc(
+            R_past,
+            num_diffusion_iters=num_diffusion_iters,
+            ensemble_members=ensemble_members    
+        )
+        R_past = R_past[0,...]
+        R_pred = R_pred[0,...].mean(axis=-1) # compute ensemble mean
+    else:
+        raise ValueError("ensemble_members must be > 0")
 
     os.makedirs(out_dir, exist_ok=True)
     for k in range(R_past.shape[0]):
@@ -92,10 +111,10 @@ def forecast_demo(
         t = t0 - (R_past.shape[0]-k-1) * interval
         plot_frame(R_past[k,:,:], fn, draw_border=draw_border,
             t=t, label="Real")
-    for k in range(R_pred.shape[1]):
+    for k in range(R_pred.shape[0]):
         fn = os.path.join(out_dir, f"R_pred-{k:02d}.png")
-        t = t0 + k*interval
-        plot_frame(R_pred[0,k,:,:], fn, draw_border=draw_border,
+        t = t0 + (k+1)*interval
+        plot_frame(R_pred[k,:,:], fn, draw_border=draw_border,
             t=t, label="Predicted")
 
 
