@@ -89,6 +89,10 @@ def forecast_demo(
             ldm_weights_fn=ldm_weights_fn,
             autoenc_weights_fn=autoenc_weights_fn
         )
+        R_pred = fc(
+            R_past,
+            num_diffusion_iters=num_diffusion_iters
+        )
     elif ensemble_members > 1:
         fc = forecast.ForecastDistributed(
             ldm_weights_fn=ldm_weights_fn,
