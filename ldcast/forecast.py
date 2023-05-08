@@ -253,7 +253,8 @@ class ForecastDistributed:
 
 
 def _compute_process(process_index, input_queue, output_queue, kwargs):
-    fc = Forecast(gpu=process_index, **kwargs)
+    gpu = process_index if (torch.cuda.device_count() > 0) else None
+    fc = Forecast(gpu=gpu, **kwargs)
     output_queue.put("Ready") # signal process ready to accept inputs
 
     while (data := input_queue.get()) is not None:
