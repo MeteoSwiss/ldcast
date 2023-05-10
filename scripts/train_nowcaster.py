@@ -1,3 +1,4 @@
+from datetime import timedelta
 import gc
 import gzip
 import os
@@ -12,7 +13,7 @@ file_dir = os.path.dirname(os.path.abspath(__file__))
 
 def setup_data(
     use_obs=True,
-    use_nwp=True,
+    use_nwp=False,
     obs_vars=("RZC",),
     nwp_vars=(
         "cape", "cin", "rate-cp", "rate-tp", "t2m",
@@ -60,8 +61,9 @@ def setup_data(
     raw_vars = set.union(
         *(set(variables[v]["sources"]) for v in predictors_obs+[target])
     )
-    for raw_var_base in variables["nwp"]["sources"]:
-        raw_vars.update(f"{raw_var_base}-{lag}" for lag in nwp_lags)
+    if use_nwp:
+        for raw_var_base in variables["nwp"]["sources"]:
+            raw_vars.update(f"{raw_var_base}-{lag}" for lag in nwp_lags)
     raw = {
         var: patches.load_all_patches(
             os.path.join(file_dir, f"../data/{var}/"), var

@@ -1,3 +1,5 @@
+import os
+
 from fire import Fire
 from omegaconf import OmegaConf
 
@@ -30,6 +32,8 @@ def create_evaluation_ensemble(
         transform_from_rainrate=transform_from_rainrate,
         calibrated=calibrated
     )
+
+    os.makedirs(out_dir, exist_ok=True)
 
     for batch_idx in range(num_batches):
         print(f"Sending batch {batch_idx+1}/{num_batches}")

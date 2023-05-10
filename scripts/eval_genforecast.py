@@ -1,6 +1,7 @@
 import contextlib
 import gc
 from itertools import chain
+import os
 
 from fire import Fire
 import torch
@@ -8,7 +9,6 @@ from torch import nn
 import torch.multiprocessing as mp
 from omegaconf import OmegaConf
 
-from ldcast.analysis import ensemble
 from ldcast.features.io import save_batch
 from ldcast.models.diffusion import plms
 
@@ -125,6 +125,8 @@ def create_evaluation_ensemble(
         nprocs=num_io_procs,
         join=False
     )
+
+    os.makedirs(out_dir, exist_ok=True)
 
     for batch_idx in range(num_batches):
         print(f"Sending batch {batch_idx+1}/{num_batches}")

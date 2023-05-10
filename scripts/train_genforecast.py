@@ -23,8 +23,7 @@ def setup_model(
     enc = encoder.SimpleConvEncoder()
     dec = encoder.SimpleConvDecoder()    
     autoencoder_obs = autoenc.AutoencoderKL(enc, dec)
-    autoencoder_obs.load_state_dict(torch.load(autoenc_weights_fn))
-    autoencoder_nwp = autoenc.DummyAutoencoder(width=num_nwp_vars)
+    autoencoder_obs.load_state_dict(torch.load(autoenc_weights_fn))    
 
     autoencoders = []
     input_patches = []
@@ -38,6 +37,7 @@ def setup_model(
         embed_dim.append(128)
         analysis_depth.append(4)
     if use_nwp:
+        autoencoder_nwp = autoenc.DummyAutoencoder(width=num_nwp_vars)
         autoencoders.append(autoencoder_nwp)
         input_patches.append(nwp_input_patches)
         input_size_ratios.append(2)
