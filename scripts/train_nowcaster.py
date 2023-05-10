@@ -5,7 +5,7 @@ import pickle
 
 import numpy as np
 
-from sdgf.features import batch, patches, split, transform
+from ldcast.features import batch, patches, split, transform
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 
