@@ -75,21 +75,27 @@ The preprocessed training data, needed to rerun the LDCast training, can be foun
 
 In the `scripts` directory, run
 ```bash
-$ python train_autoenc.py
+$ python train_autoenc.py --model_dir="../models/autoenc_train"
 ```
-to run the training of the autoencoder with the default parameters.
+to run the training of the autoencoder with the default parameters. The training checkpoints will be saved in the `../models/autoenc_train` directory (feel free to change this).
+
+It has been reported that this training may encounter a condition where the loss goes to `nan`. If this happens, try restarting from the latest checkpoint:
+```bash
+$ python train_autoenc.py --model_dir="../models/autoenc_train" --ckpt_path="../models/autoenc_train/<checkpoint_file>"
+```
+where `<checkpoint_file>` should be the latest checkpoint in the `../models/autoenc_train/` directory.
 
 ## Training the diffusion model
 
 In the `scripts` directory, run
 ```bash
-$ python train_genforecast.py
+$ python train_genforecast.py --model_dir="../models/genforecast_train"
 ```
 to run the training of the diffusion model with the default parameters, or
 ```bash
-$ python train_genforecast.py --config=<path_to_config_file>
+$ python train_genforecast.py --model_dir="../models/genforecast_train" --config=<path_to_config_file>
 ```
-to run the training with different parameters. Some config files can be found in the `config` directory.
+to run the training with different parameters. Some config files can be found in the `config` directory. The training checkpoints will be saved in the `../models/genforecast_train` directory (again, this can be changed freely).
 
 # Evaluation
 

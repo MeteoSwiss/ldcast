@@ -84,7 +84,8 @@ def train(
     sampler_file=None,
     num_timesteps=8,
     chunks_file="../data/split_chunks.pkl.gz",
-    model_dir=None
+    model_dir=None,
+    ckpt_path=None
 ):
     print("Loading data...")
     datamodule = setup_data(
@@ -96,7 +97,7 @@ def train(
     (model, trainer) = setup_model(model_dir=model_dir)
 
     print("Starting training...")
-    trainer.fit(model, datamodule=datamodule)
+    trainer.fit(model, datamodule=datamodule, ckpt_path=ckpt_path)
 
 
 def main(config=None, **kwargs):
