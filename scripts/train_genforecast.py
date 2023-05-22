@@ -92,8 +92,12 @@ def train(
 
     print("Loading data...")
     datamodule = setup_data(
-        future_timesteps=future_timesteps, use_obs=use_obs, use_nwp=use_nwp,
-        sampler_file=sampler_file, batch_size=batch_size
+        future_timesteps=future_timesteps,
+        use_obs=use_obs,
+        use_nwp=use_nwp,
+        sampler_file=sampler_file,
+        batch_size=batch_size,
+        sample_shape=sample_shape
     )
 
     print("Setting up model...")
