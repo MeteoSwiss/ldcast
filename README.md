@@ -45,10 +45,9 @@ If want to process multiple cases at once and/or generate several ensemble membe
 from ldcast import forecast
 
 fc = forecast.ForecastDistributed(
-    ldm_weights_fn=ldm_weights_fn, autoenc_weights_fn=autoenc_weights_fn,
-    ensemble_members=32
+    ldm_weights_fn=ldm_weights_fn, autoenc_weights_fn=autoenc_weights_fn
 )
-R_pred = fc(R_past)
+R_pred = fc(R_past, ensemble_members=32)
 ```
 Here, `R_past` should be of shape `(cases, timesteps, height, width)` where `cases` is the number of cases you want to process. For each case, `ensemble_members` predictions are produced (this is the last axis of `R_pred`). `ForecastDistributed` automatically distributes the workload to multiple GPUs if you have them.
 
