@@ -11,15 +11,16 @@ from ldcast.visualization import plots
 def plot_crps(
     scales=("1x1","8x8","64x64"),
     model_sets=(
-        ("pm-mch-iters=50-res=256", "pm-mch-dgmr", "pm-mch-pysteps"),
-        ("pm-dwd-iters=50-res=256", "pm-dwd-dgmr", "pm-dwd-pysteps"),
-        ("pm-mch-iters=50-res=256", "pm-mch-dgmr", "pm-mch-pysteps"),
-        ("pm-dwd-iters=50-res=256", "pm-dwd-dgmr", "pm-dwd-pysteps"),
+        ("pm-mch-iters=50-res=256", "pm-mch-dgmr", "pm-mch-pysteps", "mch-persistence"),
+        ("pm-dwd-iters=50-res=256", "pm-dwd-dgmr", "pm-dwd-pysteps", "dwd-persistence"),
+        ("pm-mch-iters=50-res=256", "pm-mch-dgmr", "pm-mch-pysteps", "mch-persistence"),
+        ("pm-dwd-iters=50-res=256", "pm-dwd-dgmr", "pm-dwd-pysteps", "dwd-persistence"),
     ),
     dataset_labels=("Switzerland", "Germany", "Switzerland", "Germany"),
     xticks=(0,30,60,90),
     log=(False, False, True, True),
-    out_fn="../figures/crps-leadtime.pdf"
+    out_fn="../figures/crps-leadtime.pdf",
+    crop_box=None
 ):
     N_modelsets = len(model_sets)
     N_scales = len(scales)
@@ -32,7 +33,7 @@ def plot_crps(
             ax = fig.add_subplot(gs[i,j])
             plots.plot_crps(
                 ax=ax,
-                log=log[i], models=models, scales=(scale,),
+                log=log[i], models=models, scales=(scale,), crop_box=crop_box,
                 add_xlabel=(i==N_modelsets-1),
                 add_ylabel=(j==0),
                 add_legend=(i==j==0)
@@ -60,7 +61,8 @@ def plot_rank(
         ("pm-dwd-iters=50-res=256", "pm-dwd-dgmr", "pm-dwd-pysteps"),
     ),
     dataset_labels=("Switzerland", "Germany"),
-    out_fn="../figures/rank-distribution.pdf"
+    out_fn="../figures/rank-distribution.pdf",
+    crop_box=None
 ):
     N_modelsets = len(model_sets)
     N_scales = len(scales)
@@ -73,7 +75,7 @@ def plot_rank(
             ax = fig.add_subplot(gs[i,j])
             plots.plot_rank_distribution(
                 ax=ax,
-                models=models, scales=(scale,),
+                models=models, scales=(scale,), crop_box=crop_box,
                 add_xlabel=(i==N_modelsets-1),
                 add_ylabel=(j==0),
                 add_legend=True
@@ -143,14 +145,13 @@ def plot_rank_metric(
 def plot_fss(
     thresholds=("0.1", "1.0", "10.0"),
     model_sets=(
-        #("pm-{T}-mch-iters=50-res=256", "pm-{T}-mch-dgmr", "pm-{T}-mch-pysteps"),
-        #("pm-{T}-dwd-iters=50-res=256", "pm-{T}-dwd-dgmr", "pm-{T}-dwd-pysteps"),
-        ("{T}-mch-iters=50-res=256", "{T}-mch-dgmr", "{T}-mch-pysteps"),
-        ("{T}-dwd-iters=50-res=256", "{T}-dwd-dgmr", "{T}-dwd-pysteps"),
+        ("pm-{T}-mch-iters=50-res=256", "pm-{T}-mch-dgmr", "pm-{T}-mch-pysteps"),
+        ("pm-{T}-dwd-iters=50-res=256", "pm-{T}-dwd-dgmr", "pm-{T}-dwd-pysteps"),
     ),
     dataset_labels=("Switzerland", "Germany"),
     xticks=(1, 50, 100, 150, 200),
-    out_fn="../figures/fss-threshold.pdf"
+    out_fn="../figures/fss-threshold.pdf",
+    crop_box=None
 ):
     N_modelsets = len(model_sets)
     N_thresholds = len(thresholds)
@@ -167,7 +168,8 @@ def plot_fss(
                 models=models_T,
                 add_xlabel=(i==N_modelsets-1),
                 add_ylabel=(j==0),
-                add_legend=(i==j==0)
+                add_legend=(i==j==0),
+                crop_box=crop_box
             )
             if (j==0):
                 ylim = ax.get_ylim()
@@ -181,6 +183,58 @@ def plot_fss(
                 ax.tick_params(labelbottom=False)
             ax.set_xticks(xticks)
             
+    fig.savefig(out_fn, bbox_inches='tight')
+    plt.close(fig)
+
+
+def plot_csi(
+    thresholds=("0.1", "1.0", "10.0"),
+    scale="1x1",
+    model_sets=(
+        ("pm-{T}-mch-iters=50-res=256", "pm-{T}-mch-dgmr", "pm-{T}-mch-pysteps"),
+        ("pm-{T}-dwd-iters=50-res=256", "pm-{T}-dwd-dgmr", "pm-{T}-dwd-pysteps"),
+    ),
+    dataset_labels=("Switzerland", "Germany"),
+    out_fn=None,
+    plot_by="leadtime",
+    crop_box=None
+):
+    N_modelsets = len(model_sets)
+    N_thresholds = len(thresholds)
+
+    fig = plt.figure(figsize=(3.2 * N_thresholds, 2.0 * N_modelsets), dpi=150)
+    gs = gridspec.GridSpec(N_modelsets, N_thresholds, wspace=0.05, hspace=0.07)
+
+    for (i, models) in enumerate(model_sets):
+        for (j, T) in enumerate(thresholds):
+            ax = fig.add_subplot(gs[i,j])
+            models_T = [m.format(T=T) for m in models]
+            plot_func = {
+                "leadtime": plots.plot_csi_leadtime,
+                "threshold": plots.plot_csi_threshold
+            }[plot_by]
+            plot_func(
+                ax=ax,
+                scales=(scale,),
+                models=models_T,
+                add_xlabel=(i==N_modelsets-1),
+                add_ylabel=(j==0),
+                add_legend=(i==j==0),
+                crop_box=crop_box
+            )
+            if (j==0):
+                ylim = ax.get_ylim()
+                ax.set_ylabel(dataset_labels[i]+"\n"+ax.get_ylabel())
+            else:
+                ax.set_ylim(ylim)
+                ax.tick_params(labelleft=False)
+            if (i==0):
+                ax.set_title(f"T={T} mm h$^\\mathrm{{-1}}$")
+            if (i < N_modelsets-1):
+                ax.tick_params(labelbottom=False)
+
+    if out_fn is None:
+        out_fn = f"../figures/csi-{plot_by}.pdf"      
     fig.savefig(out_fn, bbox_inches='tight')
     plt.close(fig)
 
@@ -301,6 +355,21 @@ def plot_sample_cases(
     plt.close(fig)
 
 
+def plot_sample_cases_all(
+    first_sample=512,
+    num_samples=256,
+    region="mch", # mch or dwd
+):
+    out_dir = f"../figures/sample-cases/{region}"
+    os.makedirs(out_dir, exist_ok=True)
+    model = f"{region}-iters=50-res=256"
+    for k in range(num_samples):
+        fn = f"sample-case-{k:04d}.pdf"
+        print(fn)
+        fn = os.path.join(out_dir, fn)
+        plot_sample_cases(samples=(first_sample+k,), models=(model,), out_fn=fn)
+
+
 def plot_ensemble(
     models=(
         ("mch-iters=50-res=256", "mch-dgmr"),
@@ -364,6 +433,21 @@ def plot_ensemble(
                 
     fig.savefig(out_fn, bbox_inches='tight')
     plt.close(fig)
+
+
+def plot_ensemble_all(
+    first_sample=512,
+    num_samples=256,
+    region="mch", # mch or dwd
+):
+    out_dir = f"../figures/ensemble-diversity/{region}"
+    os.makedirs(out_dir, exist_ok=True)
+    models = (f"{region}-iters=50-res=256", f"{region}-dgmr")
+    for k in range(num_samples):
+        fn = f"ensemble-diversity-{k:04d}.pdf"
+        print(fn)
+        fn = os.path.join(out_dir, fn)
+        plot_ensemble(samples=(first_sample+k,), models=(models,), out_fn=fn)
 
 
 def plot_all():

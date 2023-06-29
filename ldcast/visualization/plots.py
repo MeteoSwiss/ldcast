@@ -7,7 +7,7 @@ from matplotlib import gridspec, colors, pyplot as plt
 import numpy as np
 import torch
 
-from ..analysis import rank, fss
+from ..analysis import confmatrix, fss, rank
 from ..features import io
 from .cm import homeyer_rainbow
 
@@ -89,9 +89,11 @@ model_colors = {
     "mch-dgmr": "#E69F00",
     "mch-pysteps": "#009E73",
     "mch-iters=50-res=256": "#0072B2",
+    "mch-persistence": "#888888",
     "dwd-dgmr": "#E69F00",
     "dwd-pysteps": "#009E73",
     "dwd-iters=50-res=256": "#0072B2",
+    "dwd-persistence": "#888888",
     "pm-mch-dgmr": "#E69F00",
     "pm-mch-pysteps": "#009E73",
     "pm-mch-iters=50-res=256": "#0072B2",
@@ -106,17 +108,19 @@ scale_linestyles = {
     "64x64": ":"
 }
 
+
 def plot_crps(
     log=False,
     models=("iters=50-res=256", "dgmr", "pysteps"),
     scales=("1x1", "8x8", "64x64"),
-    model_labels=("LDCast", "DGMR", "PySTEPS"),
+    model_labels=("LDCast", "DGMR", "PySTEPS", "Persist."),
     interval_mins=5,
     out_fn=None,
     ax=None,
     add_xlabel=True,
     add_ylabel=True,
     add_legend=True,
+    crop_box=None
 ):
     crps = {}
     crps_name = "logcrps" if log else "crps"
@@ -125,9 +129,17 @@ def plot_crps(
         fn = f"../results/crps/{crps_name}-{model}.nc"
         with netCDF4.Dataset(fn, 'r') as ds:
             for scale in scales:
-                var = f"crps_pool{scale}"                
-                crps[model][scale] = \
-                    np.array(ds[var][:], copy=False).mean(axis=(0,1,3,4))
+                var = f"crps_pool{scale}"
+                crps_model_scale = np.array(ds[var][:], copy=False)
+                if crop_box is not None:
+                    scale_int = int(scale.split("x")[0])
+                    crps_model_scale = crps_model_scale[
+                        ...,
+                        crop_box[0][0]//scale_int:crop_box[0][1]//scale_int,
+                        crop_box[1][0]//scale_int:crop_box[1][1]//scale_int
+                    ]
+                crps[model][scale] = crps_model_scale.mean(axis=(0,1,3,4))
+                del crps_model_scale
 
     if ax is None:
         fig = plt.figure(figsize=(8,5))
@@ -171,13 +183,13 @@ def plot_rank_distribution(
     models=("iters=50-res=256", "dgmr", "pysteps"),
     scales=("1x1", "8x8", "64x64"),
     model_labels=("LDCast", "DGMR", "PySTEPS"),
-    interval_mins=5,
     out_fn=None,
     num_ensemble_members=32,
     ax=None,
     add_xlabel=True,
     add_ylabel=True,
     add_legend=True,
+    crop_box=None
 ):
     rank_hist = {}
     rank_KL = {}
@@ -186,10 +198,17 @@ def plot_rank_distribution(
         with netCDF4.Dataset(fn, 'r') as ds:
             for scale in scales:
                 var = f"ranks_pool{scale}"
-                ranks = np.array(ds[var][:], copy=False)
-                rank_hist[(model,scale)] = rank.rank_distribution(ranks)
+                ranks_model_scale = np.array(ds[var][:], copy=False)
+                if crop_box is not None:
+                    scale_int = int(scale.split("x")[0])
+                    ranks_model_scale = ranks_model_scale[
+                        ...,
+                        crop_box[0][0]//scale_int:crop_box[0][1]//scale_int,
+                        crop_box[1][0]//scale_int:crop_box[1][1]//scale_int
+                    ]
+                rank_hist[(model,scale)] = rank.rank_distribution(ranks_model_scale)
                 rank_KL[(model,scale)] = rank.rank_DKL(rank_hist[(model,scale)])
-                del ranks
+                del ranks_model_scale
     
     if ax is None:
         fig = plt.figure(figsize=(8,5))
@@ -288,12 +307,23 @@ def plot_rank_metric(
         plt.close(fig)
 
 
-def load_fss(model, scale, use_timesteps):
+def load_fss(model, scale, use_timesteps, crop_box):
     fn = f"../results/fractions/fractions-{model}.nc"
     with netCDF4.Dataset(fn, 'r') as ds:
         sn = f"{scale}x{scale}"
         obs_frac = np.array(ds[f"obs_frac_scale{sn}"][:], copy=False)
         fc_frac = np.array(ds[f"fc_frac_scale{sn}"][:], copy=False)
+        if crop_box is not None:
+            obs_frac = obs_frac[
+                ...,
+                crop_box[0][0]//scale:crop_box[0][1]//scale,
+                crop_box[1][0]//scale:crop_box[1][1]//scale
+            ]
+            fc_frac = fc_frac[
+                ...,
+                crop_box[0][0]//scale:crop_box[0][1]//scale,
+                crop_box[1][0]//scale:crop_box[1][1]//scale
+            ]
         return fss.fractions_skill_score(
             obs_frac, fc_frac, use_timesteps=use_timesteps
         )
@@ -310,7 +340,8 @@ def plot_fss(
     add_ylabel=True,
     add_legend=True,
     scales=None,
-    use_timesteps=18
+    use_timesteps=18,
+    crop_box=None
 ):
     if scales is None:
         scales = 2**np.arange(9)
@@ -321,7 +352,7 @@ def plot_fss(
             fss_scale[model] = {}
             for scale in scales:
                 fss_scale[model][scale] = executor.submit(
-                    load_fss, model, scale, use_timesteps
+                    load_fss, model, scale, use_timesteps, crop_box
                 )
 
         for model in models:
@@ -358,6 +389,217 @@ def plot_fss(
     ylim = (0, ylim[1])
     ax.set_ylim(ylim)
     ax.tick_params(axis='both', which='major', labelsize=12)
+    
+    if out_fn is not None:
+        fig.savefig(out_fn, bbox_inches='tight')
+        plt.close(fig)
+
+
+def plot_csi_threshold(
+    models=("iters=50-res=256", "dgmr", "pysteps"),
+    scales=("1x1", "8x8", "64x64"),
+    prob_thresholds=tuple(np.linspace(0,1,33)),
+    model_labels=("LDCast", "DGMR", "PySTEPS"),
+    out_fn=None,
+    num_ensemble_members=32,
+    max_timestep=18,
+    ax=None,
+    add_xlabel=True,
+    add_ylabel=True,
+    add_legend=True,
+    crop_box=None
+):
+    csi = {}
+    for model in models:
+        fn = f"../results/fractions/fractions-{model}.nc"
+        with netCDF4.Dataset(fn, 'r') as ds:
+            for scale in scales:
+                fc_var = f"fc_frac_scale{scale}"
+                fc_frac = np.array(ds[fc_var], copy=False)
+                fc_frac = fc_frac[...,:max_timestep,:,:]
+                obs_var = f"obs_frac_scale{scale}"
+                obs_frac = np.array(ds[obs_var], copy=False)
+                obs_frac = obs_frac[...,:max_timestep,:,:]
+                conf_matrix = confmatrix.confusion_matrix_thresholds(
+                    fc_frac, obs_frac, prob_thresholds
+                )
+                del fc_frac, obs_frac
+                csi_scale = confmatrix.intersection_over_union(conf_matrix)
+                csi[(model,scale)] = csi_scale
+    
+    if ax is None:
+        fig = plt.figure(figsize=(8,5))
+        ax = fig.add_subplot()
+    
+    for scale in scales:        
+        linestyle = scale_linestyles[scale]  
+        for (model, label) in zip(models, model_labels):        
+            c = csi[(model,scale)]
+            model_parts = model.split("-")
+            if model.startswith("pm-"):
+                model_without_threshold = "-".join(model_parts[:1] + model_parts[2:])
+            else:
+                model_without_threshold = "-".join(model_parts[1:])
+            color = model_colors[model_without_threshold]          
+            ax.plot(prob_thresholds, c, color=color, linestyle=linestyle, label=label)
+
+    if add_legend:
+        ax.legend(loc='upper center')
+    if add_xlabel:
+        ax.set_xlabel("Prob. threshold", fontsize=12)
+    if add_ylabel:
+        ax.set_ylabel("CSI", fontsize=12)
+
+    ax.set_xlim((0, 1))
+    ylim = ax.get_ylim()
+    ylim = (0, ylim[1])
+    ax.set_ylim(ylim)
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.set_xticks([0, 0.25, 0.5, 0.75, 1])
+    # int labels for 0 and 1 to save space
+    ax.set_xticklabels(["0", "0.25", "0.5", "0.75", "1"])
+    
+    if out_fn is not None:
+        fig.savefig(out_fn, bbox_inches='tight')
+        plt.close(fig)
+
+
+def plot_csi_leadtime(
+    models=("iters=50-res=256", "dgmr", "pysteps"),
+    scales=("1x1", "8x8", "64x64"),
+    prob_thresholds=tuple(np.linspace(0,1,33)),
+    model_labels=("LDCast", "DGMR", "PySTEPS"),
+    out_fn=None,
+    interval_mins=5,
+    num_ensemble_members=32,
+    ax=None,
+    add_xlabel=True,
+    add_ylabel=True,
+    add_legend=True,
+    crop_box=None
+):
+    csi = {}
+    for model in models:
+        fn = f"../results/fractions/fractions-{model}.nc"
+        with netCDF4.Dataset(fn, 'r') as ds:
+            for scale in scales:
+                fc_var = f"fc_frac_scale{scale}"
+                fc_frac = np.array(ds[fc_var], copy=False)
+                obs_var = f"obs_frac_scale{scale}"
+                obs_frac = np.array(ds[obs_var], copy=False)
+                conf_matrix = confmatrix.confusion_matrix_thresholds_leadtime(
+                    fc_frac, obs_frac, prob_thresholds
+                )
+                
+                csi_scale = confmatrix.intersection_over_union(conf_matrix)
+                csi[(model,scale)] = np.nanmax(csi_scale, axis=1)
+    
+    max_t = 0
+    for (model, label) in zip(models, model_labels):
+        for scale in scales:
+            score = csi[(model,scale)]
+
+            model_parts = model.split("-")
+            if model.startswith("pm-"):
+                model_without_threshold = "-".join(model_parts[:1] + model_parts[2:])
+            else:
+                model_without_threshold = "-".join(model_parts[1:])
+            color = model_colors[model_without_threshold]            
+            linestyle = scale_linestyles[scale]
+            t = np.arange(
+                interval_mins, (len(score)+0.1)*interval_mins, interval_mins
+            )
+            max_t = max(max_t, t[-1])
+            ax.plot(t, score, color=color, linestyle=linestyle,
+                label=label)
+
+    if add_legend:
+        plt.legend()
+    if add_xlabel:
+        plt.xlabel("Lead time [min]", fontsize=12)
+    if add_ylabel:
+        plt.ylabel("CSI", fontsize=12)
+
+    ax.set_xlim((0, max_t))
+    ylim = ax.get_ylim()
+    ylim = (0, ylim[1])
+    ax.set_ylim(ylim)
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    
+    if out_fn is not None:
+        fig.savefig(out_fn, bbox_inches='tight')
+        plt.close(fig)
+
+
+def plot_cost_loss_value(
+    models=("iters=50-res=256", "dgmr", "pysteps"),
+    scales=("1x1", "8x8", "64x64"),
+    prob_thresholds=tuple(np.linspace(0,1,33)),
+    model_labels=("LDCast", "DGMR", "PySTEPS"),
+    out_fn=None,
+    interval_mins=5,
+    num_ensemble_members=32,
+    ax=None,
+    add_xlabel=True,
+    add_ylabel=True,
+    add_legend=True,
+    crop_box=None
+):
+    value = {}
+    loss = 1.0
+    cost = np.linspace(0.01, 1, 100)
+    for model in models:
+        fn = f"../results/fractions/fractions-{model}.nc"
+        with netCDF4.Dataset(fn, 'r') as ds:
+            for scale in scales:
+                fc_var = f"fc_frac_scale{scale}"
+                fc_frac = np.array(ds[fc_var], copy=False)
+                obs_var = f"obs_frac_scale{scale}"
+                obs_frac = np.array(ds[obs_var], copy=False)
+                conf_matrix = confmatrix.confusion_matrix_thresholds(
+                    fc_frac, obs_frac, prob_thresholds
+                )                
+
+                p_clim = obs_frac.mean()
+                value_scale = []
+                for c in cost:
+                    v = confmatrix.cost_loss_value(
+                        conf_matrix, c, loss, p_clim
+                    )
+                    value_scale.append(v[len(v)//2])
+                value[(model,scale)] = np.array(value_scale)
+  
+    max_score = 0
+    for (model, label) in zip(models, model_labels):
+        for scale in scales:
+            score = value[(model,scale)]
+            max_score = max(max_score, score[np.isfinite(score)].max())
+
+            model_parts = model.split("-")
+            if model.startswith("pm-"):
+                model_without_threshold = "-".join(model_parts[:1] + model_parts[2:])
+            else:
+                model_without_threshold = "-".join(model_parts[1:])
+            color = model_colors[model_without_threshold]            
+            linestyle = scale_linestyles[scale]
+
+            ax.plot(cost, score, color=color, linestyle=linestyle,
+                label=label)
+
+    if add_legend:
+        plt.legend()
+    if add_xlabel:
+        plt.xlabel("Cost/loss ratio", fontsize=12)
+    if add_ylabel:
+        plt.ylabel("Value", fontsize=12)
+
+    ax.set_xlim((0, 1))
+    ylim = (0, max_score*1.05)
+    ax.set_ylim(ylim)
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.set_xticks([0, 0.25, 0.5, 0.75, 1])
+    # int labels for 0 and 1 to save space
+    ax.set_xticklabels(["0", "0.25", "0.5", "0.75", "1"])
     
     if out_fn is not None:
         fig.savefig(out_fn, bbox_inches='tight')

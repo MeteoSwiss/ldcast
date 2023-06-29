@@ -58,8 +58,9 @@ def setup_data(
     raw_vars = set.union(
         *(set(variables[v]["sources"]) for v in predictors_obs+[target])
     )
-    for raw_var_base in variables["nwp"]["sources"]:
-        raw_vars.update(f"{raw_var_base}-{lag}" for lag in nwp_lags)
+    if use_nwp:
+        for raw_var_base in variables["nwp"]["sources"]:
+            raw_vars.update(f"{raw_var_base}-{lag}" for lag in nwp_lags)
     raw = {
         var: patches.load_all_patches(
             os.path.join(file_dir, f"../data/{var}/"), var
