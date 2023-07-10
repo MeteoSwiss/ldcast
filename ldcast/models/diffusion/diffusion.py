@@ -175,7 +175,7 @@ class LatentDiffusion(pl.LightningModule):
             self.model_ema(self.model)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr,
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr,
             betas=(0.5, 0.9), weight_decay=1e-3)
         reduce_lr = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, patience=3, factor=0.25, verbose=True
